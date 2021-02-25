@@ -57,8 +57,10 @@ print('total frames {} width {} height {}'.format(
     total_frames, frame_w, frame_h))
 codec = cv2.VideoWriter_fourcc(*"MP4V")
 
+contacts = detect_contacts(INPUT_AUDIO)
+print(contacts)
 swing_num = 0
-for timestamp in detect_contacts(INPUT_AUDIO):
+for timestamp in contacts:
     # calculate swing start and end frames
     contact_frame = round(timestamp * FPS)
     st_frame = contact_frame - PRE_STRIKE_FRAMES + 1

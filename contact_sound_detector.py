@@ -4,7 +4,7 @@ from aubio import pitch as get_pitch
 
 MIN_SWING_BUFF = 1.0
 MIN_CONTACT_PITCH = 80
-SAMPLE_PITCH = 0.25
+SAMPLE_PITCH_RATE = 0.25
 
 
 def detect_contacts(filename):
@@ -27,6 +27,9 @@ def detect_contacts(filename):
     max_pitch = 0
     last_pitch = 0
     last_contact = 0
+    st_swing_win = -1
+    max_swing_time = -1
+    max_swing_pitch = -1
     contacts = []
     while True:
         samples, read = s()
@@ -34,21 +37,41 @@ def detect_contacts(filename):
         # pitch = int(round(pitch))
         # confidence = pitch_o.get_confidence()
         timestamp = total_frames / float(samplerate)
-        # if confidence < 0.8: pitch = 0.
+        # if confidence < 0.8:
+        #     pitch = 0
         # print("%f %f" % (timestamp, pitch))
         total_frames += read
 
-        if pitch > max_pitch:
-            max_pitch = pitch
-
-        # get max pitch
-        if timestamp - last_pitch >= SAMPLE_PITCH:
-            # contact detected
-            if max_pitch > MIN_CONTACT_PITCH and timestamp >= last_contact + MIN_SWING_BUFF:
-                contacts.append(round(timestamp, 4))
-                last_contact = timestamp
-            last_pitch = timestamp
-            max_pitch = 0
+        # no swing detected
+        if st_swing_win == -1:
+            if pitch > max_pitch:
+                max_pitch = pitch
+            # get max pitch in sample rate
+            if timestamp - last_pitch >= SAMPLE_PITCH_RATE:
+                # swing window detected
+                if max_pitch > MIN_CONTACT_PITCH and timestamp >= last_contact + MIN_SWING_BUFF:
+                    last_contact = timestamp
+                    st_swing_win = timestamp
+                    max_swing_time = timestamp
+                    max_swing_pitch = max_pitch
+                    print('poss contact {} {}'.format(
+                        st_swing_win, max_swing_pitch))
+                last_pitch = timestamp
+                max_pitch = 0
+        else:
+            if timestamp - st_swing_win < 0.75 and pitch > max_swing_pitch:
+                max_swing_time = timestamp
+                max_swing_pitch = pitch
+                print('updating max {} {}'.format(
+                    st_swing_win, max_swing_pitch))
+            # get largest pitch in swing window
+            elif timestamp - st_swing_win >= 0.75:
+                contacts.append(max_swing_time)
+                print('contact {} {}'.format(max_swing_time, max_swing_pitch))
+                st_swing_win = -1
+                max_swing_time = -1
+                max_swing_pitch = -1
+                last_contact = max_swing_time
 
         if read < hop_s:
             break
