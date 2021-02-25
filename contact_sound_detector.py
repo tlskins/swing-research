@@ -35,7 +35,7 @@ def detect_contacts(filename):
         # confidence = pitch_o.get_confidence()
         timestamp = total_frames / float(samplerate)
         # if confidence < 0.8: pitch = 0.
-        print("%f %f" % (timestamp, pitch))
+        # print("%f %f" % (timestamp, pitch))
         total_frames += read
 
         if pitch > max_pitch:
