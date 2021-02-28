@@ -9,9 +9,9 @@ from centroid_tracker import CentroidTracker
 
 np.random.seed(42)
 
-INPUT_VIDEO = 'tim_ground_profile_wide_540p.mp4'
+INPUT_VIDEO = './inputs/rallying_2_16_clip_0.mp4'
 # INPUT_VIDEO = 'clip_0.mp4'
-OUTPUT_VIDEO = 'yellow_22_93_50_test.mp4'
+OUTPUT_VIDEO = './out/rallying_2_16_clip_0_yellow.mp4'
 MEDIAN_FRAMES = 30
 # TEST_BALL = 'ball_test.png'
 
@@ -161,6 +161,7 @@ while(frameCnt < total_frames-1):
     yellowCnts = yellowCnts[0] if len(yellowCnts) == 2 else yellowCnts[1]
 
     tracked = []
+    yellow_dist = 0
     for cnt in yellowCnts:
         x, y, w, h = cv2.boundingRect(cnt)
         area = w*h

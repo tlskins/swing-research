@@ -1,131 +1,59 @@
-#! /usr/bin/env python
-
-from demo_waveform_plot import get_waveform_plot, set_xlabels_sample2time
-import matplotlib.pyplot as plt
-from numpy import array, ma
-import os.path
 import sys
-from aubio import source, pitch
-import csv
+from aubio import source
+from aubio import pitch as get_pitch
+import numpy as num
 
-if len(sys.argv) < 2:
-    print("Usage: %s <filename> [samplerate]" % sys.argv[0])
-    sys.exit(1)
+MIN_SWING_BUFF = 1.5  # maybe 1.0 for wall and 1.25 for rallying
+MIN_CONTACT_PITCH = 50
+SAMPLE_PITCH_RATE = 0.25
+SWING_WINDOW = 0.75
 
-filename = sys.argv[1]
 
-csv_header = ['seconds', 'pitch', 'confidence']
-csv_filename = 'pitch_detection.csv'
+def detect_pitches(filename):
+    print(filename)
+    downsample = 1
+    samplerate = 44100 // downsample
+    win_s = 4096 // downsample  # fft size
+    hop_s = 512 // downsample  # hop size
 
-downsample = 1
-samplerate = 44100 // downsample
-if len(sys.argv) > 2:
-    samplerate = int(sys.argv[2])
+    s = source(filename, samplerate, hop_s)
+    samplerate = s.samplerate
 
-win_s = 4096 // downsample  # fft size
-hop_s = 512 // downsample  # hop size
+    tolerance = 0.8
 
-s = source(filename, samplerate, hop_s)
-samplerate = s.samplerate
+    pitch_o = get_pitch("yin", win_s, hop_s, samplerate)
+    pitch_o.set_unit("midi")
+    pitch_o.set_tolerance(tolerance)
 
-tolerance = 0.8
-
-pitch_o = pitch("yin", win_s, hop_s, samplerate)
-pitch_o.set_unit("midi")
-pitch_o.set_tolerance(tolerance)
-
-pitches = []
-confidences = []
-
-# write csv file
-csvwriter = None
-with open(csv_filename, 'w') as csvfile:
-    csvwriter = csv.writer(csvfile)
-    csvwriter.writerow(csv_header)
-
-    # total number of frames read
     total_frames = 0
-    max_pitch = 0
-    proc_secs = 0
+    times = []
+    pitches = []
+    volumes = []
+    confidences = []
     while True:
         samples, read = s()
         pitch = pitch_o(samples)[0]
-        # pitch = int(round(pitch))
-        confidence = pitch_o.get_confidence()
+        pitch = int(round(pitch, 2))
         timestamp = total_frames / float(samplerate)
-        # if confidence < 0.8: pitch = 0.
-        print("%f %f %f" % (timestamp, pitch, confidence))
-        pitches += [pitch]
-        confidences += [confidence]
+        confidence = pitch_o.get_confidence()
+        # if confidence < 0.1:
+        #     pitch = 0
+        # print("%f %f" % (timestamp, pitch))
         total_frames += read
-
-        if pitch > max_pitch:
-            max_pitch = pitch
-
-        if timestamp - proc_secs >= 0.25:
-            csvwriter.writerow([timestamp, max_pitch, confidence])
-            proc_secs = timestamp
-            max_pitch = 0
+        if pitch >= MIN_CONTACT_PITCH:
+            times.append(timestamp)
+            pitches.append(pitch)
+            volume = num.sum(samples**2)/len(samples)*100
+            volume = "{:4f}".format(volume)
+            volumes.append(volume)
+            confidences.append(confidence)
 
         if read < hop_s:
             break
 
-    if 0:
-        sys.exit(0)
-
-# print pitches
-
-skip = 1
-
-pitches = array(pitches[skip:])
-confidences = array(confidences[skip:])
-times = [t * hop_s for t in range(len(pitches))]
-
-fig = plt.figure()
-
-ax1 = fig.add_subplot(311)
-ax1 = get_waveform_plot(filename, samplerate=samplerate,
-                        block_size=hop_s, ax=ax1)
-plt.setp(ax1.get_xticklabels(), visible=False)
-ax1.set_xlabel('')
+    return [times, pitches, volumes]
 
 
-def array_from_text_file(filename, dtype='float'):
-    filename = os.path.join(os.path.dirname(__file__), filename)
-    return array([line.split() for line in open(filename).readlines()],
-                 dtype=dtype)
-
-
-ax2 = fig.add_subplot(312, sharex=ax1)
-ground_truth = os.path.splitext(filename)[0] + '.f0.Corrected'
-if os.path.isfile(ground_truth):
-    ground_truth = array_from_text_file(ground_truth)
-    true_freqs = ground_truth[:, 2]
-    true_freqs = ma.masked_where(true_freqs < 2, true_freqs)
-    true_times = float(samplerate) * ground_truth[:, 0]
-    ax2.plot(true_times, true_freqs, 'r')
-    ax2.axis(ymin=0.9 * true_freqs.min(), ymax=1.1 * true_freqs.max())
-# plot raw pitches
-ax2.plot(times, pitches, '.g')
-# plot cleaned up pitches
-cleaned_pitches = pitches
-# cleaned_pitches = ma.masked_where(cleaned_pitches < 0, cleaned_pitches)
-# cleaned_pitches = ma.masked_where(cleaned_pitches > 120, cleaned_pitches)
-cleaned_pitches = ma.masked_where(confidences < tolerance, cleaned_pitches)
-ax2.plot(times, cleaned_pitches, '.-')
-# ax2.axis( ymin = 0.9 * cleaned_pitches.min(), ymax = 1.1 * cleaned_pitches.max() )
-# ax2.axis( ymin = 55, ymax = 70 )
-plt.setp(ax2.get_xticklabels(), visible=False)
-ax2.set_ylabel('f0 (midi)')
-
-# plot confidence
-ax3 = fig.add_subplot(313, sharex=ax1)
-# plot the confidence
-ax3.plot(times, confidences)
-# draw a line at tolerance
-ax3.plot(times, [tolerance]*len(confidences))
-ax3.axis(xmin=times[0], xmax=times[-1])
-ax3.set_ylabel('confidence')
-set_xlabels_sample2time(ax3, times[-1], samplerate)
-plt.show()
-# plt.savefig(os.path.basename(filename) + '.svg')
+if __name__ == "__main__":
+    pitches = detect_pitches(sys.argv[1])
+    print(pitches)

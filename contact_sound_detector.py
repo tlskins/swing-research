@@ -2,9 +2,10 @@ import sys
 from aubio import source
 from aubio import pitch as get_pitch
 
-MIN_SWING_BUFF = 1.0
+MIN_SWING_BUFF = 1.5  # maybe 1.0 for wall and 1.25 for rallying
 MIN_CONTACT_PITCH = 80
 SAMPLE_PITCH_RATE = 0.25
+SWING_WINDOW = 0.75
 
 
 def detect_contacts(filename):
@@ -35,9 +36,9 @@ def detect_contacts(filename):
         samples, read = s()
         pitch = pitch_o(samples)[0]
         # pitch = int(round(pitch))
-        # confidence = pitch_o.get_confidence()
         timestamp = total_frames / float(samplerate)
-        # if confidence < 0.8:
+        # confidence = pitch_o.get_confidence()
+        # if confidence < 0.1:
         #     pitch = 0
         # print("%f %f" % (timestamp, pitch))
         total_frames += read
@@ -59,13 +60,13 @@ def detect_contacts(filename):
                 last_pitch = timestamp
                 max_pitch = 0
         else:
-            if timestamp - st_swing_win < 0.75 and pitch > max_swing_pitch:
+            if timestamp - st_swing_win < SWING_WINDOW and pitch > max_swing_pitch:
                 max_swing_time = timestamp
                 max_swing_pitch = pitch
                 print('updating max {} {}'.format(
                     st_swing_win, max_swing_pitch))
             # get largest pitch in swing window
-            elif timestamp - st_swing_win >= 0.75:
+            elif timestamp - st_swing_win >= SWING_WINDOW:
                 contacts.append(max_swing_time)
                 print('contact {} {}'.format(max_swing_time, max_swing_pitch))
                 st_swing_win = -1
