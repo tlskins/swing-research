@@ -7,14 +7,12 @@ import datetime
 np.random.seed(42)
 
 # env vars
-INPUT_VIDEO = './inputs/rallying_ph_2_16_clip_1.mp4'
+INPUT_VIDEO = './inputs/rallying_2_16_clip_2.mp4'
 MEDIAN_FRAMES = 90
-SWING_GROUP_BUFFER = 60
+SWING_GROUP_BUFFER = 30
 FPS = 30
 PRE_STRIKE_FRAMES = 30
 POST_STRIKE_FRAMES = 30
-# CUT_WIDTH = 558
-# CUT_HEIGHT = 314
 CUT_WIDTH = 1066
 CUT_HEIGHT = 600
 # yolo
@@ -140,6 +138,7 @@ def boxes_intersect(box1, box2):
 t1 = datetime.datetime.now()
 
 # read video
+print('capturing video...')
 video_stream = cv2.VideoCapture(INPUT_VIDEO)
 total_frames = video_stream.get(cv2.CAP_PROP_FRAME_COUNT)
 frame_w = round(video_stream.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -148,6 +147,7 @@ print('total frames {} width {} height {}'.format(
     total_frames, frame_w, frame_h))
 
 # get median frame
+print('calculating median frames...')
 frameIds = video_stream.get(cv2.CAP_PROP_FRAME_COUNT) * \
     np.random.uniform(size=MEDIAN_FRAMES)
 frames = []
@@ -160,9 +160,11 @@ medianFrame = np.median(frames, axis=0).astype(dtype=np.uint8)
 grayMedianFrame = cv2.cvtColor(medianFrame, cv2.COLOR_BGR2GRAY)
 hsv_median_frame = cv2.cvtColor(medianFrame, cv2.COLOR_BGR2HSV)
 
+print('initializing yolo...')
 init_yolo()
 
 # get frames with swings
+print('calc frames with swings...')
 frames = []
 frame_num = 0
 while frame_num < total_frames-1:
@@ -176,6 +178,7 @@ while frame_num < total_frames-1:
         frames.append(frame_num)
 
 # group swing frames
+print('group swing frames...')
 swing_frames = []
 last_frame = frames[0]
 curr_frames = [last_frame]
@@ -186,9 +189,9 @@ for i, frame_num in enumerate(frames[1:]):
     curr_frames.append(frame_num)
     last_frame = frame_num
 
-print(swing_frames)
 
 # write swings
+print('writing swings...')
 swing_num = 1
 last_cut_frame = 0
 for i, frames in enumerate(swing_frames):
