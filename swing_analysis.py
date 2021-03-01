@@ -7,9 +7,9 @@ np.random.seed(42)
 
 # rallying_ph_2_16_clip_0
 
-INPUT_VIDEO = './inputs/rallying_ph_2_16_clip_1.mp4'
-INPUT_AUDIO = './inputs/rallying_ph_2_16_clip_1.mp3'
-OUTPUT_VIDEO = './out/rallying_ph_2_16_clip_1_analysis.mp4'
+INPUT_VIDEO = './inputs/rallying_ph_2_16_clip_0.mp4'
+INPUT_AUDIO = './inputs/rallying_ph_2_16_clip_0.mp3'
+OUTPUT_VIDEO = './out/rallying_ph_2_16_clip_0_analysis.mp4'
 MEDIAN_FRAMES = 90
 FPS = 30
 PRE_STRIKE_FRAMES = 30
@@ -151,6 +151,7 @@ def boundContours(frame):
 
 # read video
 video_stream = cv2.VideoCapture(INPUT_VIDEO)
+video_stream.set(cv2.CAP_PROP_FPS, FPS)
 total_frames = video_stream.get(cv2.CAP_PROP_FRAME_COUNT)
 frame_w = round(video_stream.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_h = round(video_stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -185,7 +186,8 @@ ret, tframe = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 # print(pitch_times)
 # pitch_idx = 0
 
-writer = cv2.VideoWriter(OUTPUT_VIDEO, codec, 30, (frame_w, frame_h))
+video_stream.set(cv2.CAP_PROP_POS_FRAMES, 0)
+writer = cv2.VideoWriter(OUTPUT_VIDEO, codec, FPS, (frame_w, frame_h))
 frame_num = 0
 history = []
 

@@ -7,15 +7,13 @@ NMS_THRESHOLD = 0.4
 COLORS = [(0, 255, 255), (255, 255, 0), (0, 255, 0), (255, 0, 0)]
 
 class_names = []
-with open("coco.names", "r") as f:
+with open("./models/coco.names", "r") as f:
     class_names = [cname.strip() for cname in f.readlines()]
 
-vc = cv2.VideoCapture("tim_ground_profile_wide_540p.mp4")
+vc = cv2.VideoCapture("./inputs/rallying_ph_2_16_clip_0.mp4")
 
-# net = cv2.dnn.readNet("yolov4.weights", "yolov4.cfg")
-# net = cv2.dnn.readNet("yolov4_mish.pt", "yolov4_mish.cfg")
-net = cv2.dnn.readNet("yolov4-tiny.weights", "yolov4-tiny.cfg")
-# net = cv2.dnn.readNet("yolov4-csp.weights", "yolov4-csp.cfg")
+net = cv2.dnn.readNet("./models/yolov4-tiny.weights",
+                      "./models/yolov4-tiny.cfg")
 net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
 net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
 
@@ -23,7 +21,7 @@ model = cv2.dnn_DetectionModel(net)
 model.setInputParams(size=(416, 416), scale=1/255)
 
 fullVidWriter = cv2.VideoWriter(
-    './detect2.mp4',
+    './out/rallying_2_16_clip_0_yolo.mp4',
     cv2.VideoWriter_fourcc(*'mp4v'),
     30,
     (round(vc.get(cv2.CAP_PROP_FRAME_WIDTH)),
