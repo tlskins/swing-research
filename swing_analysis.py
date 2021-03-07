@@ -5,12 +5,12 @@ from pitch_detector import detect_pitches
 
 np.random.seed(42)
 
-# rallying_ph_2_16_clip_0
+# wall_FH_2_24_clip_1
 
-INPUT_VIDEO = './inputs/rallying_ph_2_16_clip_0.mp4'
-INPUT_AUDIO = './inputs/rallying_ph_2_16_clip_0.mp3'
-OUTPUT_VIDEO = './out/rallying_ph_2_16_clip_0_analysis.mp4'
-MEDIAN_FRAMES = 90
+INPUT_VIDEO = './inputs/wall_FH_2_24_clip_1.mp4'
+INPUT_AUDIO = './inputs/wall_FH_2_24_clip_1.mp3'
+OUTPUT_VIDEO = './out/wall_FH_2_24_clip_1_analysis.mp4'
+MEDIAN_FRAMES = 200
 FPS = 30
 PRE_STRIKE_FRAMES = 30
 POST_STRIKE_FRAMES = 30
@@ -145,7 +145,7 @@ def boundContours(frame):
     cv2.putText(frame, 'angle {}'.format(angle), (50, 80),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 2)
 
-    body_color = (255, 255, 0) if MA >= 100 else (0, 255, 0)
+    body_color = (0, 255, 0) if MA >= 100 else (0, 0, 0)
     cv2.drawContours(frame, [maxCnt], -1, body_color, 2)
 
 
